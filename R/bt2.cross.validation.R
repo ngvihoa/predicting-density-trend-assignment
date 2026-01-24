@@ -85,7 +85,7 @@ GCV_loclin <- function(x, y, h, kernel = "gaussian") {
 
 GCV_loclin <- Vectorize(FUN = GCV_loclin, vectorize.args = "h")
 
-match_cv <- function(cv_method = c("CV", "GCV"), m_method = c('kernel_reg', 'loclin_reg')) {
+match_cv <- function(cv_method = c("CV", "GCV"), m_method = c('loclin_reg', 'kernel_reg')) {
   cv_method <- match.arg(cv_method)
   m_method <- match.arg(m_method)
   
@@ -105,7 +105,7 @@ match_cv <- function(cv_method = c("CV", "GCV"), m_method = c('kernel_reg', 'loc
 cross_validation <- function(x, y, h, 
                              kernel = "gaussian", 
                              cv_method = c("CV", "GCV", "Both"), 
-                             m_method = c('kernel_reg', 'loclin_reg')) {
+                             m_method = c('loclin_reg', 'kernel_reg')) {
   
   if (cv_method == "CV" || cv_method == "Both") {
     cv_function <- match_cv(cv_method='CV', m_method=m_method)
