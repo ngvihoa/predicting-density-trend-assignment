@@ -1,3 +1,7 @@
+## =========================================== ##
+## BÀI TẬP 2: HIỆN THỰC HÀM CROSS VALIDATION   ##
+## =========================================== ##
+
 source('R/guest.data.trend.R')
 source('R/kernel.functions.R')
 
@@ -75,7 +79,7 @@ GCV_loclin <- function(x, y, h, kernel = "gaussian") {
     kernel_res <- kernel_fun(u/h)
     a0 <- mean(kernel_res)
     a1 <- mean(kernel_res * u)
-    a2 <- mean(kernel_res * u^2)
+    a2 <- mean(kernel_res * u^2) 
     W_diag[i] <- (a2 * kernel_res[i])/(a2 * a0 - a1^2)/n
   }
   m_hat <- m_fun(x = x, y = y, x_eval = x, h = h, kernel = kernel)
@@ -85,35 +89,96 @@ GCV_loclin <- function(x, y, h, kernel = "gaussian") {
 
 GCV_loclin <- Vectorize(FUN = GCV_loclin, vectorize.args = "h")
 
-match_cv <- function(cv_method = c("CV", "GCV"), m_method = c('loclin_reg', 'kernel_reg')) {
-  cv_method <- match.arg(cv_method)
-  m_method <- match.arg(m_method)
-  
-  if(cv_method == "CV" && m_method == 'kernel_reg'){
-    return(CV_kernel)
+
+### CV with local polynomial regression
+CV_poly <- function(x, y, h, p = 2, kernel = "gaussian") {
+  m_fun <- data_trend_fun(fun = "locpoly_reg", p = p)
+  n <- length(y)
+  err <- numeric(n)
+  for (i in 1:n) {
+    y_hat <- m_fun(
+      x = x[-i],
+      y = y[-i],
+      x_eval = x[i],
+      h = h,
+      kernel = kernel
+    )
+    err[i] <- (y[i] - y_hat)^2
   }
-  if(cv_method == "GCV" && m_method == 'kernel_reg'){
-    return(GCV_kernel)
-  }
-  if(cv_method == "CV" && m_method == 'loclin_reg'){
-    return(CV_loclin)
-  }
-  return(GCV_loclin)
+  mean(err, na.rm = TRUE)
 }
+
+CV_poly <- Vectorize(FUN = CV_poly, vectorize.args = "h")
+
+### GCV with local polynomial regression
+GCV_poly <- function(x, y, h, p = 2, kernel = "gaussian") {
+  kernel_fun <- get_kernel_fun(kernel)
+  n <- length(y)
+  y_hat <- numeric(n)
+  Sii   <- numeric(n)
+  for (i in 1:n) {
+    u <- x - x[i]
+    w <- kernel_fun(u / h)
+    X <- sapply(0:p, function(k) u^k)  
+    W <- diag(w)
+    XtWX <- t(X) %*% W %*% X
+    
+    ## kiểm tra suy biến
+    if (rcond(XtWX) < 1e-12) {
+      y_hat[i] <- NA
+      Sii[i]   <- NA
+      next
+    }
+    
+    XtWX_inv <- solve(XtWX)
+    beta_hat <- XtWX_inv %*% t(X) %*% W %*% y
+    
+    ## fitted value tại x[i]
+    y_hat[i] <- beta_hat[1]
+    
+    e1 <- c(1, rep(0, p))
+    XtW_col_i <- X[i, ] * w[i]
+    Sii[i] <- as.numeric(e1 %*% XtWX_inv %*% XtW_col_i)
+  }
+  rss  <- sum((y - y_hat)^2, na.rm = TRUE)
+  trS  <- sum(Sii, na.rm = TRUE)
+  gcv <- rss / (n - trS)^2
+  return(gcv)
+}
+
+GCV_poly <- Vectorize(FUN = GCV_poly, vectorize.args = "h")
 
 ### Main cross-validation
 cross_validation <- function(x, y, h, 
-                             kernel = "gaussian", 
-                             cv_method = c("CV", "GCV", "Both"), 
-                             m_method = c('loclin_reg', 'kernel_reg')) {
+                             p = 1,
+                             kernel = "gaussian",
+                             cv_method = c("CV", "GCV", "Both")) {
+ 
+  cv_method <- match.arg(cv_method)
+  
+  #### chọn hàm CV/GCV theo p
+  match_cv <- function(type) {
+    if (p == 0 && type == "CV")  return(CV_kernel)
+    if (p == 0 && type == "GCV") return(GCV_kernel)
+    if (p == 1 && type == "CV")  return(CV_loclin)
+    if (p == 1 && type == "GCV") return(GCV_loclin)
+    if (p >= 2 && type == "CV")
+        return(function(x, y, h, kernel)
+          CV_poly(x, y, h, p, kernel))
+    if (p >= 2 && type == "GCV")
+        return(function(x, y, h, kernel)
+          GCV_poly(x, y, h, p, kernel))
+    
+    stop("Giá trị p không hợp lệ")
+  }  
   
   if (cv_method == "CV" || cv_method == "Both") {
-    cv_function <- match_cv(cv_method='CV', m_method=m_method)
+    cv_function <- match_cv('CV')
     cv_error <- cv_function(x, y, h, kernel) 
   }
   
   if (cv_method == "GCV" || cv_method == "Both") {
-    gcv_function <- match_cv(cv_method='GCV', m_method=m_method)
+    gcv_function <- match_cv('GCV')
     gcv_error <- gcv_function(x, y, h, kernel)  
   }
   

@@ -1,8 +1,6 @@
 # Các functions xác định xu hướng
 source('R/kernel.functions.R')
 
-## KNN method ---
-
 ## Kernel regression (Nadaraga-Watson)
 kernel_regression <- function(x, y, x_eval, h, kernel = 'gaussian') {
   wi <- get_kernel_fun(name = kernel)((x - x_eval) / h)
@@ -32,16 +30,42 @@ local_linear_regression <- function(x, y, x_eval, h, kernel = "gaussian"){
 
 local_linear_regression <- Vectorize(FUN=local_linear_regression, vectorize.args = "x_eval")
 
-
-## Hàm tổng dự đoán xu hướng
-data_trend_fun <- function(fun = c('loclin_reg', 'kernel_reg')){
-  fun <- match.arg(fun)
-  switch (fun,
-    'kernel_reg'= kernel_regression,
-    'loclin_reg' = local_linear_regression,
-    stop("Method không hợp lệ")
-  )
+## Local Polynomial Regression
+local_polynomial_regression <- function(x, y, x_eval, h, p = 2, kernel = "gaussian") {
+  kernel_fun <- get_kernel_fun(name = kernel)
+  u <- x - x_eval
+  w <- kernel_fun(u / h)
+  
+  # ma trận thiết kế: [1, u, u^2, ..., u^p]
+  X <- sapply(0:p, function(k) u^k)
+  W <- diag(w)
+  
+  XtWX <- t(X) %*% W %*% X
+  
+  # Tránh ma trận suy biến
+  if (rcond(XtWX) < 1e-12) {
+    return(NA)
+  }
+  
+  beta_hat <- solve(XtWX, t(X) %*% W %*% y)
+  
+  # ước lượng tại x_eval
+  beta_hat[1]
 }
 
+local_polynomial_regression <- Vectorize(FUN = local_polynomial_regression, vectorize.args = "x_eval")
+
+## Hàm tổng dự đoán xu hướng
+data_trend_fun <- function(fun = c('loclin_reg', 'kernel_reg', 'locpoly_reg'), p = 2){
+  fun <- match.arg(fun)
+  
+  switch (fun,
+          'kernel_reg'  = kernel_regression,
+          'loclin_reg'  = local_linear_regression,
+          'locpoly_reg' = function(x, y, x_eval, h, kernel)
+            local_polynomial_regression(x, y, x_eval, h, p, kernel),
+          stop("Method không hợp lệ")
+  )
+}
 
 

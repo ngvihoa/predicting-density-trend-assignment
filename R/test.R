@@ -27,7 +27,7 @@ CV_kernel(x=mcycle$times, y=mcycle$accel, h=1.5)
 CV_kernel(x=mcycle$times, y=mcycle$accel, h=2.5)
 
 h_plot <- seq(0.1, 4, length.out = 41)
-cv1_est <- cross_validation(x=mcycle$times,y=mcycle$accel,h=h_plot, kernel = 'gaussian', cv_method="CV",m_method="loclin_reg")
+cv1_est <- cross_validation(x=mcycle$times,y=mcycle$accel,h=h_plot, p = 1, kernel = 'gaussian', cv_method="CV")
 
 plot(x=h_plot, y=cv1_est,type='b', pch=16)
 
@@ -37,7 +37,7 @@ system.time({
                              h=h_plot, 
                              kernel = 'gaussian', 
                              cv_method="CV",
-                             m_method="loclin_reg")
+                             p=1)
 })
 
 
