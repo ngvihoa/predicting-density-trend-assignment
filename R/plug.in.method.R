@@ -1,4 +1,4 @@
-## Plug-in rule of thumb
+## Plug-in rule of thumb >> R/plug.in.method.R
 ROT <- function(x, kernel = c("gaussian", "epanechnikov")) {
   n <- length(x)
   kernel <- match.arg(kernel)
