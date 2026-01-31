@@ -3,31 +3,24 @@ marsbig <- read.table("data/marsbig.dat", header = TRUE)
 
 orbits <- sort(unique(marsbig$orbit))
 
-## Vẽ từng đồ thị riêng
-for (orb in orbits) {
-  
-  dat <- subset(marsbig, orbit == orb)
-  
-  x <- dat$pressure
-  y <- dat$temperature
-  
-  ## Fit LOESS
-  fit <- loess(temperature ~ pressure,
-               data = dat,
-               degree = 2,
-               span = 0.5)
 
-  x_grid <- seq(min(x), max(x), length.out = 300)
-  y_hat <- predict(fit,
-                   newdata = data.frame(pressure = x_grid))
+colors <- c("red", "blue", "darkgreen", "purple", "orange", "brown", "pink")
+par(bg = "white")  # hoặc "gray95" để dịu mắt
+
+plot(NULL, xlim = range(marsbig$pressure), ylim = range(marsbig$temperature),
+     xlab = "Pressure (Pa)", ylab = "Temperature (K)",
+     main = "So sánh xu hướng nhiệt độ theo \n bán kính giữa 7 quỹ đạo khác nhau với loess")
+
+for (i in seq_along(orbits)) {
+  dat <- subset(marsbig, orbit == orbits[i])
+  fit <- loess(temperature ~ pressure, data = dat, degree = 2, span = 0.5)
+  x_grid <- seq(min(dat$pressure), max(dat$pressure), length.out = 300)
+  y_hat <- predict(fit, newdata = data.frame(pressure = x_grid))
   
-  ## Vẽ đồ thị
-  plot(x, y,
-       pch = 16, cex=0.6, col = "black",
-       xlab = "Pressure",
-       ylab = "Temperature",
-       main = paste("Orbit", orb))
-  
-  lines(x_grid, y_hat,
-        col = "blue", lwd = 2)
+  lines(x_grid, y_hat, col = colors[i], lwd = 2)
+  points(dat$pressure, dat$temperature, col = colors[i], pch = 16, cex = 0.5)
 }
+
+legend("topleft", legend = paste("Orbit", orbits),
+       col = colors, lwd = 2, pch = 16, cex = 0.8, bty = "n")
+

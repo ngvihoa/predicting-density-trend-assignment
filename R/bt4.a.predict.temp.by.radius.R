@@ -4,14 +4,14 @@
 
 source('R/bt3.poly.regression.R')
 
+## Tạo thư mục lưu kết quả nếu chưa có
+if (!dir.exists("Result")) dir.create("Result")
+if (!dir.exists("Result/4a")) dir.create("Result/4a")
+
 ## Đọc dữ liệu
 mars <- read.table("data/mars.dat", header = TRUE)
 x <- mars$radius
 y <- mars$temperature
-
-## Tạo thư mục lưu kết quả nếu chưa có
-if (!dir.exists("Result")) dir.create("Result")
-if (!dir.exists("Result/4a")) dir.create("Result/4a")
 
 x_grid <- seq(min(x), max(x), length.out = 300)
 
