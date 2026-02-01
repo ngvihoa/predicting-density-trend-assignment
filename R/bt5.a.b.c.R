@@ -103,4 +103,59 @@ result_df <- data.frame(
 
 result_df
 
-# Câu d lặp 100 lần câu a và b
+##===============================
+## Biểu diễn cho câu 5c
+##===============================
+
+
+#Gaussian
+x_grid <- seq(min(x), max(x), length.out = 400)
+
+
+m_rot_gau <- sapply(x_grid, function(x0)
+  local_linear_regression(x, y, x0, h_rot_gau, "gaussian"))
+
+m_cv_gau <- sapply(x_grid, function(x0)
+  local_linear_regression(x, y, x0, h_CV_gau, "gaussian"))
+
+m_gcv_gau <- sapply(x_grid, function(x0)
+  local_linear_regression(x, y, x0, h_GCV_gau, "gaussian"))
+
+
+plot(x, y, pch = 16, cex = 0.5, col = "grey",
+     main = "Local Linear Regression – Gaussian kernel",
+     xlab = "x", ylab = "y")
+
+lines(x_grid, m_rot_gau, col = "blue", lwd = 2)
+lines(x_grid, m_cv_gau,  col = "red",  lwd = 2)
+lines(x_grid, m_gcv_gau, col = "darkgreen", lwd = 2, lty = 2 ) 
+
+legend("topright",
+       legend = c("ROT", "CV", "GCV"),
+       col = c("blue", "red", "darkgreen"),
+       lwd = 2, bty = "n")
+
+#Epanechnikov
+m_rot_epan <- sapply(x_grid, function(x0)
+  local_linear_regression(x, y, x0, h_rot_epan, "epanechnikov"))
+
+m_cv_epan <- sapply(x_grid, function(x0)
+  local_linear_regression(x, y, x0, h_CV_epan, "epanechnikov"))
+
+m_gcv_epan <- sapply(x_grid, function(x0)
+  local_linear_regression(x, y, x0, h_GCV_epan, "epanechnikov"))
+
+
+plot(x, y, pch = 16, cex = 0.5, col = "grey",
+     main = "Local Linear Regression – Epanechnikov kernel",
+     xlab = "x", ylab = "y")
+
+lines(x_grid, m_rot_epan, col = "blue", lwd = 2)
+lines(x_grid, m_cv_epan,  col = "red",  lwd = 2)
+lines(x_grid, m_gcv_epan, col = "darkgreen", lwd = 2,lty = 2)
+
+legend("topright",
+       legend = c("ROT", "CV", "GCV"),
+       col = c("blue", "red", "darkgreen"),
+       lwd = 2, bty = "n")
+
